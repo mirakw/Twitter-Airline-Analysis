@@ -1,0 +1,133 @@
+---
+title: "MGSC 410 HW#1"
+author: "Mira Wadehra"
+date: "9/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+```
+
+load dataset
+```{r}
+tweets <- read.csv("MGSC410Datasets/tweets.csv")
+tweets
+tweets_cleaned <- tweets%>%select(c(airline, airline_sentiment, airline_sentiment_confidence, negativereason,negativereason_confidence, retweet_count, text))
+tweets_cleaned
+```
+Mean for sentiment per airline (higher the mean the more negative sentiment)
+
+```{r pressure, echo=FALSE}
+airlinesentiment_confidence_na <- tweets_cleaned %>% drop_na(airline_sentiment_confidence)
+airlinesentiment_confidence_na
+
+pos_ASC <- airlinesentiment_confidence_na %>%  filter(airline_sentiment == "positive")
+neg_ASC <- airlinesentiment_confidence_na %>%  filter(airline_sentiment == "negative")
+Neut_ASC <- airlinesentiment_confidence_na %>%  filter(airline_sentiment == "neutral")
+neg_ASC
+
+mean_pos_airlinesentiment_confidence_na_per_airline <- pos_ASC %>% group_by(airline) %>% summarize_at(vars(airline_sentiment_confidence),list(mean_pos_airlinesentiment_confidence_na_per_airline = mean))
+mean_pos_airlinesentiment_confidence_na_per_airline  %>% arrange(desc(mean_pos_airlinesentiment_confidence_na_per_airline))
+
+mean_neg_airlinesentiment_confidence_na_per_airline <- neg_ASC %>% group_by(airline) %>% summarize_at(vars(airline_sentiment_confidence),list(mean_neg_airlinesentiment_confidence_na_per_airline = mean))
+mean_neg_airlinesentiment_confidence_na_per_airline  %>% arrange(desc(mean_neg_airlinesentiment_confidence_na_per_airline))
+
+mean_neut_airlinesentiment_confidence_na_per_airline <- Neut_ASC %>% group_by(airline) %>% summarize_at(vars(airline_sentiment_confidence),list(mean_neut_airlinesentiment_confidence_na_per_airline = mean))
+mean_neut_airlinesentiment_confidence_na_per_airline  %>% arrange(desc(mean_neut_airlinesentiment_confidence_na_per_airline))
+
+
+```
+
+Mean for sentiment per airline (higher the mean the more negative sentiment)
+
+```{r pressure, echo=FALSE}
+negreason_confidence_na <- tweets_cleaned %>% drop_na(negativereason_confidence)
+negreason_confidence_na
+
+mean_negreason_confidence_per_airline <- negreason_confidence_na %>% group_by(airline) %>% summarize_at(vars(negativereason_confidence), list(mean_negreason_confidence_per_airline = mean))
+mean_negreason_confidence_per_airline  %>% arrange(desc(mean_negreason_confidence_per_airline))
+```
+
+Median for sentiment per airline (higher the mean the more negative setiment)
+```{r pressure, echo=FALSE}
+median_negreason_confidence_per_airline <- negreason_confidence_na %>% group_by(airline) %>% summarize_at(vars(negativereason_confidence), list(median_negreason_confidence_per_airline = median))
+median_negreason_confidence_per_airline  %>% arrange(desc(median_negreason_confidence_per_airline))
+
+```
+
+Number of Tweets per airline
+```{r pressure, echo=FALSE}
+ggplot(tweets_cleaned) + aes(airline,fill= airline) + geom_bar() +geom_text(stat='count', aes(label=..count..), vjust=1.6, color="black")  + labs(title= 'Number of Tweets per Airline', fill="Airlines") +  theme_minimal()
+```
+
+
+Main reason why each airline has a bad reviwes
+```{r pressure, echo=FALSE}
+
+tweets_na_cleaned<- tweets_cleaned %>%
+   mutate(across(c("negativereason"), ~ifelse(.=="", "No Reason",
+                                              as.character(.))))
+table(tweets_na_cleaned$negativereason)
+
+tweets_na_cleaned$negativereason <- str_replace_all(tweets_na_cleaned$negativereason,'longlines','Long Lines')
+
+tweets_removed_noreason <- tweets_na_cleaned %>% filter(negativereason != "No Reason")
+
+tweets_removed_noreason
+
+ggplot(tweets_removed_noreason) +
+aes(x= airline, fill=airline) + facet_wrap(~negativereason) + geom_bar() +  xlab("Airline")+ ylab("Count")+ggtitle("Count of Tweets per Negative Reason per Airline")+labs(fill="Negative Reason") +  theme(axis.text.x = element_text(angle = 0, size=0)) 
+```
+
+Overall Negative Reason not per airline
+```{r pressure, echo=FALSE}
+tweets_removed_noreason %>%  group_by(airline) %>% count(negativereason)
+
+ggplot(tweets_removed_noreason) +
+aes(x= negativereason, fill=negativereason)+ geom_bar() +  xlab("Negative Reason")+ ylab("Count")+ggtitle("Count of Tweets per Negative Reason")+ theme(axis.text.x = element_text(angle = 0, size=0)) +labs(fill="Negative Reason") + geom_text(stat='count', aes(label=..count..), vjust=1.6, color="black")
+```
+
+Number of positive, negative, neutral sentiment per airline
+```{r pressure, echo=FALSE}
+Number_airline_sentiment <- tweets_cleaned %>% group_by(airline) %>% count(airline_sentiment)
+Number_airline_sentiment
+```
+
+Number of positive, negative, neutral sentiment per airline
+```{r pressure, echo=FALSE}
+ggplot(tweets_cleaned, aes(x=airline_sentiment, fill=airline_sentiment))+ facet_wrap(~airline)+
+  geom_bar()+xlab("Airline Tweet Sentiment")+ ylab("Count")+ggtitle("Count of Sentiment of Tweet per Airline")+ theme(axis.text.x = element_text(angle = 0, size=10))+geom_text(stat='count', aes(label=..count..), vjust=.8, color="black") +labs(fill="Airline Sentiment")
+```
+positive, negative, neutral sentiment per airline and the negativereason
+
+```{r pressure, echo=FALSE}
+ggplot(tweets_na_cleaned, aes(x=airline_sentiment, fill=negativereason))+ facet_wrap(~airline)+
+  geom_bar()+xlab("Airline Sentiment")+ ylab("Count")+ggtitle("Count of Tweet Sentiment per Airline and the Negative Reason")+ theme(axis.text.x = element_text(angle = 90, size=10)) +labs(fill = "Negative Reason")
+
+#+geom_text(stat='count', aes(label=..count..), vjust=.8, color="black")
+```
+
+Does the length of the text show anything about the Sentiment?
+```{r pressure, echo=FALSE}
+tweets_cleaned$text_length <- sapply(tweets_cleaned$text, function(x) nchar(x))
+
+ggplot(tweets_cleaned, aes(x = text_length, 
+    fill = airline_sentiment))  +
+  geom_density(alpha = 0.5)  + xlab("Text Length") + ggtitle("Text Lengths with Sentiment Distribution") + theme(text = element_text(size=10)) + theme_minimal()
+```
+
+retweets
+```{r pressure, echo=FALSE}
+max(tweets_removed_noreason$retweet_count)
+sum(tweets_removed_noreason$retweet_count)
+
+tweets_removed_noreason %>%  group_by(negativereason) %>% count(retweet_count)
+
+ggplot(tweets_removed_noreason, aes(x=retweet_count, fill=negativereason))+ facet_wrap(~airline)+
+  geom_bar()+xlab("Number of Retweets")+ ylab("Count")+ggtitle( "Count of Retweets per the Negative Reason from the original tweet and the Airline")+ theme(axis.text.x = element_text(angle = 90, size=6)) +xlim(0,45)+ylim(0,200) +labs(fill="Negative Reason")
+```
+
+
