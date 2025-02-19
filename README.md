@@ -89,7 +89,7 @@ This project analyzes Twitter data to assess airline sentiment, identify the mos
   - Kaggle discussions on Twitter sentiment analysis.
 
 ## Contributors
-- **Author**: Mira Wadehra
+- **Author**: Mira Kapoor Wadehra (https://github.com/mirakw).
 - **Professor**: Houldsworth (MGSC-410-01)
 
 ## License
